@@ -62,6 +62,7 @@ int main() {
                        "0 0000000      0"
                        "0              0"
                        "0002222222200000";
+    const float fov = M_PI / 3.0;
     float player_x = 3.456;
     float player_y = 2.345;
     float player_a = 1.523;
@@ -89,15 +90,18 @@ int main() {
     }
     draw_rectangle(framebuffer, win_w, win_h, player_x * rect_w, player_y * rect_h, 5, 5,
                    pack_color(255, 255, 255));
-    for (float t = 0; t < 20; t += 0.05) {
-        float cx = player_x + t * cos(player_a);
-        float cy = player_y + t * sin(player_a);
-        if (map[int(cx) + int(cy) * map_w] != ' ') {
-            break;
+    for (size_t i = 0; i < win_w; ++i) {
+        const float angle = player_a - fov / 2 + fov * i / float(win_w);
+        for (float t = 0; t < 20; t += 0.05) {
+            float cx = player_x + t * cos(angle);
+            float cy = player_y + t * sin(angle);
+            if (map[int(cx) + int(cy) * map_w] != ' ') {
+                break;
+            }
+            size_t pix_x = cx * rect_w;
+            size_t pix_y = cy * rect_h;
+            framebuffer[pix_x + pix_y * win_w] = pack_color(255, 255, 255);
         }
-        size_t pix_x = cx * rect_w;
-        size_t pix_y = cy * rect_h;
-        framebuffer[pix_x + pix_y * win_w] = pack_color(255, 255, 255);
     }
     generate_image("out.ppm", framebuffer, win_w, win_h);
     return 0;

@@ -106,7 +106,7 @@ int main() {
                 size_t pix_y = cy * rect_h;
                 framebuffer[pix_x + pix_y * win_w] = pack_color(166, 166, 166);
                 if (map[int(cx) + int(cy) * map_w] != ' ') {
-                    const size_t column_height = win_h / t;
+                    const size_t column_height = win_h / (t * cos(angle - player_a));
                     const size_t icolor = map[int(cx) + int(cy) * map_w] - '0';
                     draw_rectangle(framebuffer, win_w, win_h, win_w / 2 + i,
                                    win_h / 2 - column_height / 2, 1, column_height, colors[icolor]);

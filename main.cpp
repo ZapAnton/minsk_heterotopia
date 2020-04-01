@@ -61,6 +61,8 @@ int main() {
                        "0 0000000      0"
                        "0              0"
                        "0002222222200000";
+    float player_x = 3.456;
+    float player_y = 2.345;
     std::vector<uint32_t> framebuffer(win_w * win_h, 255);
     for (size_t j = 0; j < win_h; ++j) {
         for (size_t i = 0; i < win_w; ++i) {
@@ -71,6 +73,7 @@ int main() {
             framebuffer[color_index] = pack_color(r, g, b);
         }
     }
+    const uint32_t rect_color = pack_color(0, 255, 255);
     for (size_t j = 0; j < map_h; ++j) {
         for (size_t i = 0; i < map_w; ++i) {
             const auto map_index = i + j * map_w;
@@ -79,10 +82,11 @@ int main() {
             }
             const size_t rect_x = i * rect_w;
             const size_t rect_y = j * rect_h;
-            const uint32_t rect_color = pack_color(0, 255, 255);
             draw_rectangle(framebuffer, win_w, win_h, rect_x, rect_y, rect_w, rect_h, rect_color);
         }
     }
+    draw_rectangle(framebuffer, win_w, win_h, player_x * rect_w, player_y * rect_h, 5, 5,
+                   pack_color(255, 255, 255));
     generate_image("out.ppm", framebuffer, win_w, win_h);
     return 0;
 }

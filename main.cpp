@@ -27,12 +27,15 @@ void generate_image(const std::string filename, const std::vector<uint32_t> &ima
 }
 
 void draw_rectangle(std::vector<uint32_t> &image_buffer, const size_t image_width,
-                    const size_t image_heigh, const size_t x, const size_t y, const size_t w,
+                    const size_t image_height, const size_t x, const size_t y, const size_t w,
                     const size_t h, const uint32_t color) {
     for (size_t i = 0; i < w; ++i) {
         for (size_t j = 0; j < h; ++j) {
             const size_t cx = x + i;
             const size_t cy = y + j;
+            if (cx >= image_width || cy >= image_height) {
+                continue;
+            }
             const size_t rect_index = cx + cy * image_width;
             image_buffer[rect_index] = color;
         }
@@ -40,11 +43,11 @@ void draw_rectangle(std::vector<uint32_t> &image_buffer, const size_t image_widt
 }
 
 int main() {
-    const size_t win_w = 512;
+    const size_t win_w = 1024;
     const size_t win_h = 512;
     const size_t map_w = 16;
     const size_t map_h = 16;
-    const size_t rect_w = win_w / map_w;
+    const size_t rect_w = win_w / (map_w * 2);
     const size_t rect_h = win_h / map_h;
     const char map[] = "0000222222220000"
                        "1              0"
@@ -66,16 +69,7 @@ int main() {
     float player_x = 3.456;
     float player_y = 2.345;
     float player_a = 1.523;
-    std::vector<uint32_t> framebuffer(win_w * win_h, 255);
-    for (size_t j = 0; j < win_h; ++j) {
-        for (size_t i = 0; i < win_w; ++i) {
-            const auto r = 225 * j / float(win_h);
-            const auto g = 225 * i / float(win_w);
-            const auto b = 0;
-            const auto color_index = i + j * win_w;
-            framebuffer[color_index] = pack_color(r, g, b);
-        }
-    }
+    std::vector<uint32_t> framebuffer(win_w * win_h, pack_color(255, 255, 255));
     const uint32_t rect_color = pack_color(0, 255, 255);
     for (size_t j = 0; j < map_h; ++j) {
         for (size_t i = 0; i < map_w; ++i) {
@@ -90,17 +84,21 @@ int main() {
     }
     draw_rectangle(framebuffer, win_w, win_h, player_x * rect_w, player_y * rect_h, 5, 5,
                    pack_color(255, 255, 255));
-    for (size_t i = 0; i < win_w; ++i) {
-        const float angle = player_a - fov / 2 + fov * i / float(win_w);
+    for (size_t i = 0; i < win_w / 2; ++i) {
+        const float angle = player_a - fov / 2 + fov * i / float(win_w / 2);
         for (float t = 0; t < 20; t += 0.05) {
             float cx = player_x + t * cos(angle);
             float cy = player_y + t * sin(angle);
-            if (map[int(cx) + int(cy) * map_w] != ' ') {
-                break;
-            }
             size_t pix_x = cx * rect_w;
             size_t pix_y = cy * rect_h;
-            framebuffer[pix_x + pix_y * win_w] = pack_color(255, 255, 255);
+            framebuffer[pix_x + pix_y * win_w] = pack_color(166, 166, 166);
+            if (map[int(cx) + int(cy) * map_w] != ' ') {
+                size_t column_height = win_h / t;
+                draw_rectangle(framebuffer, win_w, win_h, win_w / 2 + i,
+                               win_h / 2 - column_height / 2, 1, column_height,
+                               pack_color(0, 255, 255));
+                break;
+            }
         }
     }
     generate_image("out.ppm", framebuffer, win_w, win_h);

@@ -83,6 +83,21 @@ bool load_texture(const std::string filename, std::vector<uint32_t> &texture, si
     return true;
 }
 
+std::vector<uint32_t> texture_column(const std::vector<uint32_t> &image_buffer,
+                                     const size_t texture_size, const size_t texture_count,
+                                     const size_t texture_id, const size_t texture_coord,
+                                     const size_t column_height) {
+    const size_t image_width = texture_size * texture_count;
+    // const size_t image_height = texture_size;
+    std::vector<uint32_t> column(column_height);
+    for (size_t y = 0; y < column_height; ++y) {
+        size_t pix_x = texture_id * texture_size + texture_coord;
+        size_t pix_y = (y * texture_size) / column_height;
+        column[y] = image_buffer[pix_x + pix_y * image_width];
+    }
+    return column;
+}
+
 int main() {
     const size_t win_w = 1024;
     const size_t win_h = 512;
@@ -136,15 +151,31 @@ int main() {
         for (float t = 0; t < 20; t += 0.01) {
             float cx = player_x + t * cos(angle);
             float cy = player_y + t * sin(angle);
-            size_t pix_x = cx * rect_w;
-            size_t pix_y = cy * rect_h;
-            framebuffer[pix_x + pix_y * win_w] = pack_color(160, 160, 160);
+            int pix_x = cx * rect_w;
+            int pix_y = cy * rect_h;
             if (map[int(cx) + int(cy) * map_w] != ' ') {
                 const size_t column_height = win_h / (t * cos(angle - player_a));
                 const size_t texture_id = map[int(cx) + int(cy) * map_w] - '0';
-                draw_rectangle(framebuffer, win_w, win_h, win_w / 2 + i,
-                               win_h / 2 - column_height / 2, 1, column_height,
-                               wall_texture[texture_id * wall_texture_size]);
+                float hitx = cx - floor(cx + 0.5);
+                float hity = cy - floor(cy + 0.5);
+                int x_texture_coord = hitx * wall_texture_size;
+                if (std::abs(hity) > std::abs(hitx)) {
+                    x_texture_coord = hity * wall_texture_size;
+                }
+                if (x_texture_coord < 0) {
+                    x_texture_coord += wall_texture_size;
+                }
+                std::vector<uint32_t> column =
+                    texture_column(wall_texture, wall_texture_size, wall_texture_cout, texture_id,
+                                   x_texture_coord, column_height);
+                pix_x = win_w / 2 + i;
+                for (size_t j = 0; j < column_height; ++j) {
+                    pix_y = j + win_h / 2 - column_height / 2;
+                    if (pix_y < 0 || pix_y >= (int)win_h) {
+                        continue;
+                    }
+                    framebuffer[pix_x + pix_y * win_w] = column[j];
+                }
                 break;
             }
         }

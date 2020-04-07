@@ -97,9 +97,9 @@ int main() {
                        "0     0  1110000"
                        "0     3        0"
                        "0   10000      0"
-                       "0   0   11100  0"
-                       "0   0   0      0"
-                       "0   0   1  00000"
+                       "0   3   11100  0"
+                       "5   4   0      0"
+                       "5   4   1  00000"
                        "0       1      0"
                        "2       1      0"
                        "0       0      0"
@@ -111,11 +111,6 @@ int main() {
     float player_y = 2.345;
     float player_a = 1.523;
     std::vector<uint32_t> framebuffer(win_w * win_h, pack_color(255, 255, 255));
-    const size_t ncolors = 10;
-    std::vector<uint32_t> colors(ncolors);
-    for (size_t i = 0; i < ncolors; ++i) {
-        colors[i] = pack_color(rand() % 255, rand() % 255, rand() % 255);
-    }
     std::vector<uint32_t> wall_texture;
     size_t wall_texture_size = 0;
     size_t wall_texture_cout = 0;
@@ -131,9 +126,9 @@ int main() {
             }
             const size_t rect_x = i * rect_w;
             const size_t rect_y = j * rect_h;
-            const size_t icolor = map[i + j * map_w] - '0';
+            const size_t texture_id = map[i + j * map_w] - '0';
             draw_rectangle(framebuffer, win_w, win_h, rect_x, rect_y, rect_w, rect_h,
-                           colors[icolor]);
+                           wall_texture[texture_id * wall_texture_size]);
         }
     }
     for (size_t i = 0; i < win_w / 2; ++i) {
@@ -146,18 +141,12 @@ int main() {
             framebuffer[pix_x + pix_y * win_w] = pack_color(160, 160, 160);
             if (map[int(cx) + int(cy) * map_w] != ' ') {
                 const size_t column_height = win_h / (t * cos(angle - player_a));
-                const size_t icolor = map[int(cx) + int(cy) * map_w] - '0';
+                const size_t texture_id = map[int(cx) + int(cy) * map_w] - '0';
                 draw_rectangle(framebuffer, win_w, win_h, win_w / 2 + i,
-                               win_h / 2 - column_height / 2, 1, column_height, colors[icolor]);
+                               win_h / 2 - column_height / 2, 1, column_height,
+                               wall_texture[texture_id * wall_texture_size]);
                 break;
             }
-        }
-    }
-    const size_t texid = 4;
-    for (size_t i = 0; i < wall_texture_size; ++i) {
-        for (size_t j = 0; j < wall_texture_size; ++j) {
-            framebuffer[i + j * win_w] = wall_texture[i + texid * wall_texture_size +
-                                                      j * wall_texture_size * wall_texture_cout];
         }
     }
     generate_image("out.ppm", framebuffer, win_w, win_h);

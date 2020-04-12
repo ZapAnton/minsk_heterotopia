@@ -6,10 +6,14 @@ BUILD_PATH = $(BUILD_DIRECTORY)/$(EXECUTABLE_NAME)
 release:
 	g++ *.h *.cpp -O3 -o $(BUILD_PATH)
 
-.PHONY:	run
+.PHONY: run
 run:
 	$(BUILD_PATH)
 
-.PHONY:	clean
+.PHONY: format
+format:
+	clang-format -i *.cpp *.h
+
+.PHONY: clean
 clean:
 	rm $(BUILD_DIRECTORY)/* *.ppm

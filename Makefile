@@ -4,7 +4,7 @@ BUILD_PATH = $(BUILD_DIRECTORY)/$(EXECUTABLE_NAME)
 
 .PHONY: release
 release:
-	g++ *.h *.cpp -O3 -o $(BUILD_PATH)
+	g++ -Wall -Werror -Wpedantic *.h *.cpp -O3 -o $(BUILD_PATH)
 
 .PHONY: run
 run:

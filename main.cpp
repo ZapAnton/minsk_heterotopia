@@ -1,4 +1,5 @@
 #define _USE_MATH_DEFINES
+#include <algorithm>
 #include <cmath>
 #include <iomanip>
 #include <iostream>
@@ -39,8 +40,8 @@ void draw_sprite(Sprite &sprite, std::vector<float> &depth_buffer, FrameBuffer &
     while (sprite_dir - player.a < -M_PI) {
         sprite_dir += 2 * M_PI;
     }
-    const float sprite_dist = std::sqrt(pow(player.x - sprite.x, 2) + pow(player.y - sprite.y, 2));
-    const size_t sprite_scree_size = std::min(1000, static_cast<int>(fb.height / sprite_dist));
+    const size_t sprite_scree_size =
+        std::min(1000, static_cast<int>(fb.height / sprite.player_dist));
     const int h_offset = (sprite_dir - player.a) / player.fov * (fb.width / 2) +
                          (fb.width / 2) / 2 - tex_sprites.size / 2;
     const int v_offset = fb.height / 2 - sprite_scree_size / 2;
@@ -48,7 +49,7 @@ void draw_sprite(Sprite &sprite, std::vector<float> &depth_buffer, FrameBuffer &
         if (h_offset + int(i) < 0 || h_offset + i >= fb.width / 2) {
             continue;
         }
-        if (depth_buffer[h_offset + i] < sprite_dist) {
+        if (depth_buffer[h_offset + i] < sprite.player_dist) {
             continue;
         }
         for (size_t j = 0; j < sprite_scree_size; ++j) {
@@ -118,6 +119,11 @@ void render(FrameBuffer &fb, Map &map, Player &player, std::vector<Sprite> &spri
         } // ray marching loop
     }
     for (size_t i = 0; i < sprites.size(); ++i) {
+        sprites[i].player_dist =
+            std::sqrt(pow(player.x - sprites[i].x, 2) + pow(player.y - sprites[i].y, 2));
+    }
+    std::sort(sprites.begin(), sprites.end());
+    for (size_t i = 0; i < sprites.size(); ++i) {
         map_show_sprite(sprites[i], fb, map);
         draw_sprite(sprites[i], depth_buffer, fb, player, tex_monst);
     }
@@ -133,7 +139,8 @@ int main() {
         std::cerr << "Failed to load textures" << std::endl;
         return -1;
     }
-    std::vector<Sprite> sprites{{1.834, 8.765, 0}, {5.323, 5.365, 1}, {4.123, 10.265, 1}};
+    std::vector<Sprite> sprites{
+        {3.523, 3.812, 2, 0}, {1.834, 8.765, 0, 0}, {5.323, 5.365, 1, 0}, {4.123, 10.265, 1, 0}};
     render(fb, map, player, sprites, tex_walls, tex_monst);
     generate_image("out.ppm", fb.image, fb.width, fb.height);
     return 0;

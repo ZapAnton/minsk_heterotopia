@@ -7,23 +7,31 @@
 #include "framebuffer.h"
 #include "map.h"
 #include "player.h"
+#include "sprite.h"
 #include "texture.h"
 #include "utils.h"
 
-int wall_x_texcoord(const float x, const float y, Texture &tex_walls) {
-    float hitx = x - floor(x + .5); // hitx and hity contain (signed) fractional parts of x and y,
-    float hity = y - floor(y + .5); // they vary between -0.5 and +0.5, and one of them is supposed
-                                    // to be very close to 0
-    int tex = hitx * tex_walls.size;
-    if (std::abs(hity) > std::abs(hitx)) // we need to determine whether we hit a "vertical" or a
-                                         // "horizontal" wall (w.r.t the map)
-        tex = hity * tex_walls.size;
-    if (tex < 0) // do not forget x_texcoord can be negative, fix that
+int wall_x_texcoord(const float hitx, const float hity, Texture &tex_walls) {
+    float x = hitx - floor(hitx + .5);
+    float y = hity - floor(hity + .5);
+    int tex = x * tex_walls.size;
+    if (std::abs(y) > std::abs(x)) {
+        tex = y * tex_walls.size;
+    }
+    if (tex < 0) {
         tex += tex_walls.size;
+    }
     return tex;
 }
 
-void render(FrameBuffer &fb, Map &map, Player &player, Texture &tex_walls) {
+void map_show_sprite(Sprite &sprite, FrameBuffer &fb, Map &map) {
+    const size_t rect_w = fb.width / (map.width * 2);
+    const size_t rect_h = fb.height / map.height;
+    fb.draw_rectangle(sprite.x * rect_w - 3, sprite.y * rect_h - 3, 6, 6, pack_color(255, 0, 0));
+}
+
+void render(FrameBuffer &fb, Map &map, Player &player, std::vector<Sprite> &sprites,
+            Texture &tex_walls, Texture &tex_monst) {
     fb.clear(pack_color(255, 255, 255));
     const size_t rect_w = fb.width / (map.width * 2); // size of one map cell on the screen
     const size_t rect_h = fb.height / map.height;
@@ -54,7 +62,8 @@ void render(FrameBuffer &fb, Map &map, Player &player, Texture &tex_walls) {
 
             size_t texid = map.get(x, y); // our ray touches a wall, so draw the vertical column to
                                           // create an illusion of 3D
-            size_t column_height = fb.height / (t * cos(angle - player.a));
+            const float dist = t * cos(angle - player.a);
+            size_t column_height = fb.height / dist;
             int x_texcoord = wall_x_texcoord(x, y, tex_walls);
             std::vector<uint32_t> column =
                 tex_walls.get_scaled_column(texid, x_texcoord, column_height);
@@ -71,6 +80,9 @@ void render(FrameBuffer &fb, Map &map, Player &player, Texture &tex_walls) {
             break;
         } // ray marching loop
     }
+    for (size_t i = 0; i < sprites.size(); ++i) {
+        map_show_sprite(sprites[i], fb, map);
+    }
 }
 
 int main() {
@@ -78,16 +90,13 @@ int main() {
     Player player{3.456, 2.345, 1.523, M_PI / 3.};
     Map map;
     Texture tex_walls("walltext.png");
-    if (!tex_walls.count) {
-        std::cerr << "Failed to load wall textures" << std::endl;
+    Texture tex_monst("monsters.png");
+    if (!(tex_walls.count && tex_monst.count)) {
+        std::cerr << "Failed to load textures" << std::endl;
         return -1;
     }
-    for (size_t frame = 0; frame < 360; frame++) {
-        std::stringstream ss;
-        ss << std::setfill('0') << std::setw(5) << frame << ".ppm";
-        player.a += 2 * M_PI / 360;
-        render(fb, map, player, tex_walls);
-        generate_image(ss.str(), fb.image, fb.width, fb.height);
-    }
+    std::vector<Sprite> sprites{{1.834, 8.765, 0}, {5.323, 5.365, 1}, {4.123, 10.265, 1}};
+    render(fb, map, player, sprites, tex_walls, tex_monst);
+    generate_image("out.ppm", fb.image, fb.width, fb.height);
     return 0;
 }
